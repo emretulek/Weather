@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Widgets.Common">
+      <HintPath>..\..\Widgets.Common\Widgets.Common\bin\Debug\net8.0-windows\Widgets.Common.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ImagesToCopy Include="$(ProjectDir)icons\**\*" />
+  </ItemGroup>
+  
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <MakeDir Directories="$(TargetDir)$(AssemblyName)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(TargetDir)$(AssemblyName)" />
+    <MakeDir Directories="$(TargetDir)$(AssemblyName)\icons" />
+    <Copy SourceFiles="@(ImagesToCopy)" DestinationFolder="$(TargetDir)$(AssemblyName)\icons\" />
+  </Target>
+</Project>

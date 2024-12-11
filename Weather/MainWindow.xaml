@@ -1,0 +1,156 @@
+﻿<Window x:Class="Weather.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:System="clr-namespace:System;assembly=mscorlib"
+        Title="Weather"
+        Width="400" Height="200"
+        SizeChanged="Window_SizeChanged"
+        MouseDown="SearchBox_GotFocus">
+    <Window.Resources>
+        <Style x:Key="TextBig" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{Binding Settings.FontBig}" />
+            <Setter Property="Foreground" Value="{Binding Settings.ColorLight}" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Margin" Value="5 0 0 5" />
+        </Style>
+        <Style x:Key="TextMedium" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{Binding Settings.FontMedium}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{Binding Settings.ColorLight}" />
+            <Setter Property="Margin" Value="0 5 0 5" />
+        </Style>
+        <Style x:Key="TextSmall" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{Binding Settings.FontSmall}" />
+            <Setter Property="Foreground" Value="{Binding Settings.ColorLight}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0 5 0 0" />
+        </Style>
+        <Style x:Key="TextPale" TargetType="TextBlock" BasedOn="{StaticResource TextSmall}">
+            <Setter Property="Foreground" Value="{Binding Settings.ColorDark}" />
+        </Style>
+        <Style x:Key="image" TargetType="Image">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Stretch" Value="Uniform"/>
+            <Setter Property="MaxWidth" Value="{DynamicResource MaxWidth}"/>
+            <Setter Property="MinWidth" Value="{DynamicResource MinWidth}"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="Gray" BlurRadius="5" ShadowDepth="3" Direction="315" Opacity="0.8" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="imageBig" TargetType="Image">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Margin" Value="10 0" />
+            <Setter Property="MinWidth" Value="{DynamicResource MinWidthBig}"/>
+            <Setter Property="MaxWidth" Value="{DynamicResource MaxWidthBig}"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="Gray" BlurRadius="5" ShadowDepth="3" Direction="315" Opacity="0.4" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <System:Double x:Key="FontSmall">64</System:Double>
+        <System:Double x:Key="FontMedium">32</System:Double>
+        <System:Double x:Key="FontBig">96</System:Double>
+        <System:Double x:Key="MaxWidth">64</System:Double>
+        <System:Double x:Key="MinWidth">32</System:Double>
+        <System:Double x:Key="MaxWidthBig">96</System:Double>
+        <System:Double x:Key="MinWidthBig">48</System:Double>
+    </Window.Resources>
+
+    <Border>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
+            <Grid Panel.ZIndex="1" Grid.ColumnSpan="5" VerticalAlignment="Top">
+                <TextBox x:Name="SearchBox"  Padding="0" 
+                         CaretBrush="{Binding Settings.ColorLight}" 
+                         Foreground="{Binding Settings.ColorLight}"    
+                         Background="Transparent" BorderThickness="0" 
+                         BorderBrush="{Binding Settings.ColorDark}"
+                         GotFocus="SearchBox_GotFocus"
+                         PreviewKeyDown="SearchBox_DownArrow" 
+                         TextChanged="SearchBox_TextChanged"/>
+                <Label x:Name="PlaceHolder" Padding="0"
+                   Foreground="{Binding Settings.ColorDark}"
+                   Opacity="0.2" IsHitTestVisible="False">🔍</Label>
+
+                            <!-- Autocomplete -->
+                <Canvas Canvas.ZIndex="1" x:Name="SearchPanel"  Visibility="Collapsed" VerticalAlignment="Bottom">
+                    <ListBox x:Name="SearchResults"
+                     Width="{Binding ActualWidth, ElementName=SearchPanel}"
+                     MaxHeight="200"
+                     HorizontalContentAlignment="Stretch"
+                     BorderThickness="0" 
+                     Background="#BB000000" 
+                     Foreground="{Binding Settings.ColorLight}"
+                     ItemsSource="{Binding Areas}" 
+                     MouseUp="SearchResults_MouseLeftButtonUp"
+                     KeyDown="SearchResults_KeyDown">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Address}" Padding="5" Background="#BB000000"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Canvas>
+            </Grid>
+            
+            <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image x:Name="BigImage" Focusable="True" Style="{StaticResource imageBig}" Source="{Binding DataItems[CurrentImg]}"/>
+                    <TextBlock Text="{Binding DataItems[Current]}" Style="{StaticResource TextBig}"/>
+                </StackPanel>
+            </Grid>
+            <Grid Grid.Row="0" Grid.Column="3" Grid.ColumnSpan="2">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource TextSmall}" Text="{Binding DataItems[Area]}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding DataItems[LastUpdate]}" Style="{StaticResource TextPale}"/>
+                </StackPanel>
+            </Grid>
+            <StackPanel Grid.Row="1" Grid.Column="0">
+                <TextBlock Text="{Binding DataItems[Day1]}" Style="{StaticResource TextMedium}"/>
+                <Image Style="{StaticResource image}" Source="{Binding DataItems[Image1]}"/>
+                <TextBlock Text="{Binding DataItems[Degree1]}" Style="{StaticResource TextSmall}"/>
+                <TextBlock Text="{Binding DataItems[Rain1]}" Style="{StaticResource TextPale}"/>
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="1">
+                <TextBlock Text="{Binding DataItems[Day2]}" Style="{StaticResource TextMedium}"/>
+                <Image Style="{StaticResource image}" Source="{Binding DataItems[Image2]}"/>
+                <TextBlock Text="{Binding DataItems[Degree2]}" Style="{StaticResource TextSmall}"/>
+                <TextBlock Text="{Binding DataItems[Rain2]}" Style="{StaticResource TextPale}"/>
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="2">
+                <TextBlock Text="{Binding DataItems[Day3]}" Style="{StaticResource TextMedium}"/>
+                <Image Style="{StaticResource image}" Source="{Binding DataItems[Image3]}"/>
+                <TextBlock Text="{Binding DataItems[Degree3]}" Style="{StaticResource TextSmall}"/>
+                <TextBlock Text="{Binding DataItems[Rain3]}" Style="{StaticResource TextPale}"/>
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="3">
+                <TextBlock Text="{Binding DataItems[Day4]}" Style="{StaticResource TextMedium}"/>
+                <Image Style="{StaticResource image}" Source="{Binding DataItems[Image4]}"/>
+                <TextBlock Text="{Binding DataItems[Degree4]}" Style="{StaticResource TextSmall}"/>
+                <TextBlock Text="{Binding DataItems[Rain4]}" Style="{StaticResource TextPale}"/>
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="4">
+                <TextBlock Text="{Binding DataItems[Day5]}" Style="{StaticResource TextMedium}"/>
+                <Image Style="{StaticResource image}" Source="{Binding DataItems[Image5]}"/>
+                <TextBlock Text="{Binding DataItems[Degree5]}" Style="{StaticResource TextSmall}"/>
+                <TextBlock Text="{Binding DataItems[Rain5]}" Style="{StaticResource TextPale}"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
