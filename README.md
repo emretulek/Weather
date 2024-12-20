@@ -14,7 +14,7 @@ This project was developed as a weather widget for windows widgets.
   "font_small": 12.0,
   "color_light": "#FFFFFFFF",
   "color_dark": "#FF808080",
-  "address": "Karesi, Balıkesir, Türkiye",
+  "address": "İstanbul, Türkiye",
   "geocode": "39.647,27.882"
 }
 ```
