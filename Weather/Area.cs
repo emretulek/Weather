@@ -7,6 +7,6 @@
         public required string Country { get; set; }
         public required string Language { get; set; }
         public required string PlaceID { get; set; }
-        public required string LocID { get; set; }
+        public required string GeoCode { get; set; }
     }
 }

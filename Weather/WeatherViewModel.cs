@@ -1,16 +1,15 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Windows;
 using System.Windows.Media;
 using Widgets.Common;
 
@@ -24,45 +23,10 @@ namespace Weather
         private readonly Schedule schedule = new();
         private string scheduleID = "";
 
-        private readonly static Dictionary<string, int> dataMap = new()
-        {
-            ["Area"] = 0,
-            ["LastUpdate"] = 1,
-            ["Current"] = 2,
-            ["Current_Image"] = 3,
-            ["Day1"] = 4,
-            ["Day1_Today"] = 5,
-            ["Day1_Tonight"] = 6,
-            ["Day1_Image"] = 7,
-            ["Day1_Rain"] = 8,
-            ["Day2"] = 9,
-            ["Day2_Today"] = 10,
-            ["Day2_Tonight"] = 11,
-            ["Day2_Image"] = 12,
-            ["Day2_Rain"] = 13,
-            ["Day3"] = 14,
-            ["Day3_Today"] = 15,
-            ["Day3_Tonight"] = 16,
-            ["Day3_Image"] = 17,
-            ["Day3_Rain"] = 18,
-            ["Day4"] = 19,
-            ["Day4_Today"] = 20,
-            ["Day4_Tonight"] = 21,
-            ["Day4_Image"] = 22,
-            ["Day4_Rain"] = 23,
-            ["Day5"] = 24,
-            ["Day5_Today"] = 25,
-            ["Day5_Tonight"] = 26,
-            ["Day5_Image"] = 27,
-            ["Day5_Rain"] = 28
-        };
-
-
         public struct SettingsStruct
         {
-            public string Url {  get; set; }
-            public string Pattern {  get; set; }
-            public Dictionary<string, int> DataMap { get; set; }
+            public string Address { get; set; }
+            public string GeoCode { get; set; }
             public int ReloadTimeSecond { get; set; }
             public float FontBig { get; set; }
             public float FontMedium { get; set; }
@@ -73,9 +37,8 @@ namespace Weather
 
         public static SettingsStruct Default => new()
         {
-            Url = "",
-            Pattern = Pattern(),
-            DataMap = dataMap,
+            Address = "",
+            GeoCode = "",
             ReloadTimeSecond = 600,
             FontBig = 24,
             FontMedium = 16,
@@ -84,9 +47,9 @@ namespace Weather
             ColorDark = new SolidColorBrush(Colors.Gray),
         };
 
-        private Dictionary<string, object>? _dataItems;
+        private Dictionary<string, object?>? _dataItems;
 
-        public Dictionary<string, object>? DataItems
+        public Dictionary<string, object?>? DataItems
         {
             get { return _dataItems; }
             set { 
@@ -120,72 +83,17 @@ namespace Weather
 
         public async Task Start()
         {
-            if (Settings.Url == "")
+            if (Settings.GeoCode == "")
             {
                 return;
             }
 
-            await UpdateWeather();
+            await Request();
 
             if (scheduleID == "")
             {
-                scheduleID = schedule.Secondly(async () => await UpdateWeather(), Settings.ReloadTimeSecond);
+                scheduleID = schedule.Secondly(async () => await Request(), Settings.ReloadTimeSecond);
             }
-        }
-
-        /// <summary>
-        /// Update Weather UI
-        /// </summary>
-        /// <returns></returns>
-        private async Task UpdateWeather()
-        {
-            var results = await Request();
-
-            if (results.Count == 0)
-            {
-                return;
-            }
-          
-            string implotes = string.Join(", ", results);
-            Logger.Info(implotes);
-
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                try
-                {
-                    DataItems = new()
-                    {
-                        { "Area", results[Settings.DataMap["Area"]] },
-                        { "LastUpdate", results[Settings.DataMap["LastUpdate"]] },
-                        { "Current", results[Settings.DataMap["Current"]] + " °C" },
-                        { "CurrentImg", IconPath(results[Settings.DataMap["Current_Image"]]) },
-                        { "Day1", results[Settings.DataMap["Day1"]] },
-                        { "Degree1", results[Settings.DataMap["Day1_Today"]] + " / " + results[Settings.DataMap["Day1_Tonight"]] },
-                        { "Image1", IconPath(results[Settings.DataMap["Day1_Image"]]) },
-                        { "Rain1", results[Settings.DataMap["Day1_Rain"]] },
-                        { "Day2", results[Settings.DataMap["Day2"]] },
-                        { "Degree2", results[Settings.DataMap["Day2_Today"]] + " / " + results[Settings.DataMap["Day2_Tonight"]] },
-                        { "Image2", IconPath(results[Settings.DataMap["Day2_Image"]]) },
-                        { "Rain2", results[Settings.DataMap["Day2_Rain"]] },
-                        { "Day3", results[Settings.DataMap["Day3"]] },
-                        { "Degree3", results[Settings.DataMap["Day3_Today"]] + " / " + results[Settings.DataMap["Day3_Tonight"]] },
-                        { "Image3", IconPath(results[Settings.DataMap["Day3_Image"]]) },
-                        { "Rain3", results[Settings.DataMap["Day3_Rain"]] },
-                        { "Day4", results[Settings.DataMap["Day4"]] },
-                        { "Degree4", results[Settings.DataMap["Day4_Today"]] + " / " + results[Settings.DataMap["Day4_Tonight"]] },
-                        { "Image4", IconPath(results[Settings.DataMap["Day4_Image"]]) },
-                        { "Rain4", results[Settings.DataMap["Day4_Rain"]] },
-                        { "Day5", results[Settings.DataMap["Day5"]] },
-                        { "Degree5", results[Settings.DataMap["Day5_Today"]] + " / " + results[Settings.DataMap["Day5_Tonight"]] },
-                        { "Image5", IconPath(results[Settings.DataMap["Day5_Image"]]) },
-                        { "Rain5", results[Settings.DataMap["Day5_Rain"]] }
-                    };
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex.Message);
-                }
-            }); 
         }
 
 
@@ -241,7 +149,7 @@ namespace Weather
                                 Address = string.Join(",", data?["location"]?["address"]?[i]?.ToString()),
                                 City = data?["location"]?["city"]?[i]?.ToString() ?? "",
                                 Country = data?["location"]?["country"]?[i]?.ToString() ?? "",
-                                LocID = data?["location"]?["locId"]?[i]?.ToString() ?? "",
+                                GeoCode = $"{data?["location"]?["latitude"]?[i]?.ToString()},{data?["location"]?["longitude"]?[i]?.ToString()}" ?? "",
                                 PlaceID = data?["location"]?["placeId"]?[i]?.ToString() ?? "",
                                 Language = CultureInfo.CurrentCulture.Name,
                             });
@@ -264,50 +172,119 @@ namespace Weather
         /// Request
         /// </summary>
         /// <returns></returns>
-        private async Task<List<string>> Request()
+        private async Task Request()
         {
-            List<string> groupsList = [];
-
             try
             {
-                var handler = new HttpClientHandler
-                {
-                    CookieContainer = new CookieContainer()
+                using HttpClient client = new HttpClient();
+
+                object jsonCotnent = new[] {
+                    new {
+                        name = "getSunV3CurrentObservationsUrlConfig",
+                        @params = new
+                        {
+                            geocode = Settings.GeoCode,
+                            units = "m",
+                            language = "",
+                            duration = "",
+                        }
+                    },
+                    new {
+                        name = "getSunV3DailyForecastWithHeadersUrlConfig",
+                        @params = new
+                        {
+                            geocode = Settings.GeoCode,
+                            units = "m",
+                            language = CultureInfo.CurrentCulture.Name,
+                            duration = "5day"
+                        }
+                    }
                 };
-                
-                var cookie = new Cookie("unitOfMeasurement", "m")
+
+                string jsonString = JsonConvert.SerializeObject(jsonCotnent);
+                StringContent httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json"); ;
+                var response = await client.PostAsync(_searchUrl, httpContent);
+                response.EnsureSuccessStatusCode();
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+
+                var root = JObject.Parse(responseBody);
+                var current = root["dal"]?["getSunV3CurrentObservationsUrlConfig"] as JObject;
+                var daily = root["dal"]?["getSunV3DailyForecastWithHeadersUrlConfig"] as JObject;
+
+                if (daily == null || current == null)
                 {
-                    Domain = new Uri(Settings.Url).Host,
-                    Path = "/",
-                    Secure = true,
-                    HttpOnly = true
+                    return;
+                }
+
+                var current_property = current.Properties().First();
+
+                if (current_property == null)
+                {
+                    return;
+                }
+
+                var current_data = current_property.Value["data"];
+                var current_iconCode = current_data?["iconCode"];
+                var current_temperature = current_data?["temperature"];
+                var current_temperatureMax = current_data?["temperatureMax24Hour"];
+                var current_temperatureMin = current_data?["temperatureMin24Hour"];
+                var current_precip = current_data?["precip24Hour"];
+
+                var property = daily.Properties().First();
+
+                if (property == null)
+                {
+                    return;
+                }
+
+                var data = property.Value["data"];
+                var lastUpdate = data?["responseHeaders"]?["date"] ?? "";
+                var dayOfWeek = data?["dayOfWeek"];
+                var daypart = data?["daypart"]?[0];
+                var temperature = daypart?["temperature"];
+                var precipChance = daypart?["precipChance"];
+                var iconCode = daypart?["iconCode"];
+
+                var dayDegree1_1 = string.IsNullOrEmpty(temperature?[0]?.ToString()) ? current_temperatureMax : temperature?[0];
+                var dayDegree1_2 = string.IsNullOrEmpty(temperature?[1]?.ToString()) ? current_temperatureMin : temperature?[1];
+                var dayImage1 = string.IsNullOrEmpty(iconCode?[0]?.ToString()) ? current_iconCode : iconCode?[0];
+                var dayprecipChance1 = string.IsNullOrEmpty(precipChance?[0]?.ToString()) ? current_precip : precipChance?[0];
+
+                DataItems = new()
+                {
+                    { "Area", Settings.Address },
+                    { "LastUpdate", lastUpdate },
+                    { "Current", current_temperature + " °C" },
+                    { "CurrentImg", IconPath(current_iconCode) },
+                    { "Day1", dayOfWeek?[0]},
+                    { "Degree1", dayDegree1_1 + " / " + dayDegree1_2 },
+                    { "Image1", IconPath(dayImage1) },
+                    { "Rain1", dayprecipChance1 + "%"},
+                    { "Day2", dayOfWeek?[1] },
+                    { "Degree2", temperature?[2] + " / " + temperature?[3] },
+                    { "Image2", IconPath(iconCode?[2]) },
+                    { "Rain2", precipChance?[2] + "%"},
+                    { "Day3", dayOfWeek?[2] },
+                    { "Degree3", temperature?[4] + " / " + temperature?[5] },
+                    { "Image3", IconPath(iconCode?[4]) },
+                    { "Rain3", precipChance?[4] + "%"},
+                    { "Day4", dayOfWeek?[3] },
+                    { "Degree4", temperature?[6] + " / " + temperature?[7] },
+                    { "Image4", IconPath(iconCode?[6]) },
+                    { "Rain4", precipChance?[6] + "%"},
+                    { "Day5", dayOfWeek?[4] },
+                    { "Degree5", temperature?[8] + " / " + temperature?[9] },
+                    { "Image5", IconPath(iconCode?[8]) },
+                    { "Rain5", precipChance?[8] + "%"}
                 };
-                handler.CookieContainer.Add(cookie);
 
-                using HttpClient client = new(handler);
-                string htmlContent = await client.GetStringAsync(Settings.Url);
-
-                Match match = Regex.Match(htmlContent, Settings.Pattern, RegexOptions.Singleline, TimeSpan.FromSeconds(2));
-
-                if (match.Success)
-                {
-                    groupsList = match.Groups.Cast<Group>()
-                            .Skip(1)
-                            .Select(g => g.Value)
-                            .ToList();
-                }
-                else
-                {
-                    Logger.Warning("Regex not matching.");
-                }
+                Logger.Info("Weather is updated.");
             }
             catch (Exception ex)
             {
                 Logger.Error(ex.Message);
             }
-            
-
-            return groupsList;
         }
 
 
@@ -316,54 +293,13 @@ namespace Weather
         /// </summary>
         /// <param name="IconID"></param>
         /// <returns></returns>
-        private static string IconPath(string IconID)
+        private static string IconPath(object? IconID)
         {
+            string iconName = IconID?.ToString() ?? "na";
             string dllDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
-            return Path.Combine(dllDirectory, "icons", IconID+".png");
+            return Path.Combine(dllDirectory, "icons", iconName + ".png");
         }
-        /// <summary>
-        /// düzenli görnüş için burda
-        /// </summary>
-        /// <returns></returns>
-        private static string Pattern()
-        {
-            string pattern = @"<div.*? data-testid=""CurrentConditionsContainer"".*?<h1.*?>(.*?)</h1>";
-            pattern += @"<span.*?>(.*?)</span>";
-            pattern += @".*?<div.*?><span.*?>(.*?)<span.*?>";
-            pattern += @".*?<svg.*? skycode=""(.*?)"".*?>.*?</svg></div>";
-
-            pattern += @".*?<section.*? data-testid=""DailyWeatherModule"".*?>";
-
-            //day1
-            pattern += @".*?<a.*?href=""(?:/\w{2}-\w{2}|)/weather/tenday/l/[a-f0-9]+"".*?><h3.*?><span.*?>(.*?)</span></h3>";
-            pattern += @"<div data-testid=""SegmentHighTemp"".*?><span data-testid=""TemperatureValue"".*?>(.*?)(?:<span>|</span>).*?<span data-testid=""TemperatureValue"".*?>(.*?)<span>.*?</div>";
-            pattern += @".*?<svg.*? skycode=""(.*?)"".*?>.*?</svg></div>";
-            pattern += @".*?<div data-testid=""SegmentPrecipPercentage"".*?>.*?<span.*?>.*?</span>(.*?)</span></div>";
-            //day2
-            pattern += @".*?<a.*?href=""(?:/\w{2}-\w{2}|)/weather/tenday/l/[a-f0-9]+"".*?><span.*?>(.*?)</span></h3>";
-            pattern += @"<div data-testid=""SegmentHighTemp"".*?><span data-testid=""TemperatureValue"".*?>(.*?)<span>.*?<span data-testid=""TemperatureValue"".*?>(.*?)<span>.*?</div>";
-            pattern += @".*?<svg.*? skycode=""(.*?)"".*?>.*?</svg></div>";
-            pattern += @".*?<div data-testid=""SegmentPrecipPercentage"".*?>.*?<span.*?>.*?</span>(.*?)</span></div>";
-            //day3
-            pattern += @".*?<a.*?href=""(?:/\w{2}-\w{2}|)/weather/tenday/l/[a-f0-9]+"".*?><h3.*?><span.*?>(.*?)</span></h3>";
-            pattern += @"<div data-testid=""SegmentHighTemp"".*?><span data-testid=""TemperatureValue"".*?>(.*?)<span>.*?<span data-testid=""TemperatureValue"".*?>(.*?)<span>.*?</div>";
-            pattern += @".*?<svg.*? skycode=""(.*?)"".*?>.*?</svg></div>";
-            pattern += @".*?<div data-testid=""SegmentPrecipPercentage"".*?>.*?<span.*?>.*?</span>(.*?)</span></div>";
-            //day4
-            pattern += @".*?<a.*?href=""(?:/\w{2}-\w{2}|)/weather/tenday/l/[a-f0-9]+"".*?><h3.*?><span.*?>(.*?)</span></h3>";
-            pattern += @"<div data-testid=""SegmentHighTemp"".*?><span data-testid=""TemperatureValue"".*?>(.*?)<span>.*?<span data-testid=""TemperatureValue"".*?>(.*?)<span>.*?</div>";
-            pattern += @".*?<svg.*? skycode=""(.*?)"".*?>.*?</svg></div>";
-            pattern += @".*?<div data-testid=""SegmentPrecipPercentage"".*?>.*?<span.*?>.*?</span>(.*?)</span></div>";
-            //day5
-            pattern += @".*?<a.*?href=""(?:/\w{2}-\w{2}|)/weather/tenday/l/[a-f0-9]+"".*?><h3.*?><span.*?>(.*?)</span></h3>";
-            pattern += @"<div data-testid=""SegmentHighTemp"".*?><span data-testid=""TemperatureValue"".*?>(.*?)<span>.*?<span data-testid=""TemperatureValue"".*?>(.*?)<span>.*?</div>";
-            pattern += @".*?<svg.*? skycode=""(.*?)"".*?>.*?</svg></div>";
-            pattern += @".*?<div data-testid=""SegmentPrecipPercentage"".*?>.*?<span.*?>.*?</span>(.*?)</span></div>";
-
-            return pattern;
-        }
-
-
+  
         public void Dispose()
         {
             schedule.Stop(scheduleID);

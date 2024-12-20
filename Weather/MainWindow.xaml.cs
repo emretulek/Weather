@@ -48,15 +48,14 @@ namespace Weather
         { 
             try
             {
-                Settings.Url = PropertyParser.ToString(config.GetValue("url"), Settings.Url);
-                Settings.Pattern = PropertyParser.ToString(config.GetValue("pattern"), Settings.Pattern);
+                Settings.Address = PropertyParser.ToString(config.GetValue("address"), Settings.Address);
+                Settings.GeoCode = PropertyParser.ToString(config.GetValue("geocode"), Settings.GeoCode);
                 Settings.ReloadTimeSecond = PropertyParser.ToInt(config.GetValue("reload_time"), Settings.ReloadTimeSecond);
                 Settings.FontBig = PropertyParser.ToFloat(config.GetValue("font_big"), Settings.FontBig);
                 Settings.FontMedium = PropertyParser.ToFloat(config.GetValue("font_medium"), Settings.FontMedium);
                 Settings.FontSmall = PropertyParser.ToFloat(config.GetValue("font_small"), Settings.FontSmall);
                 Settings.ColorLight = PropertyParser.ToColorBrush(config.GetValue("color_light"), Settings.ColorLight.ToString());
                 Settings.ColorDark = PropertyParser.ToColorBrush(config.GetValue("color_dark"), Settings.ColorDark.ToString());
-                Settings.DataMap = ((JObject)config.GetValue("data_map")).ToObject<Dictionary<string, int>>() ?? Settings.DataMap;
             }
             catch (Exception)
             {
@@ -66,9 +65,8 @@ namespace Weather
                 config.Add("font_small", Settings.FontSmall);
                 config.Add("color_light", Settings.ColorLight);
                 config.Add("color_dark", Settings.ColorDark);
-                config.Add("url", Settings.Url);
-                config.Add("pattern", Settings.Pattern);
-                config.Add("data_map", Settings.DataMap);
+                config.Add("address", Settings.Address);
+                config.Add("geocode", Settings.GeoCode);
                 config.Save();
             }
         }
@@ -128,7 +126,7 @@ namespace Weather
                     City = "",
                     Country = "",
                     Language = "",
-                    LocID = "",
+                    GeoCode = "",
                     PlaceID = ""
                 });
                 await ViewModel.SearchRequest(SearchBox.Text);
@@ -190,10 +188,12 @@ namespace Weather
 
                 var area = (Area)SearchResults.SelectedItem;
 
-                Settings.Url = $"https://weather.com/{area.Language}/weather/today/l/{area.PlaceID}";
+                Settings.Address = area.Address;
+                Settings.GeoCode = area.GeoCode;
                 ViewModel.Settings = Settings;
                 _ = ViewModel.Start();
-                config.Add("url", Settings.Url);
+                config.Add("address", Settings.Address);
+                config.Add("geocode", Settings.GeoCode);
                 config.Save();
             }
         }
@@ -208,10 +208,12 @@ namespace Weather
 
                 var area = (Area)SearchResults.SelectedItem;
 
-                Settings.Url = $"https://weather.com/{area.Language}/weather/today/l/{area.PlaceID}";
+                Settings.Address = area.Address;
+                Settings.GeoCode = area.GeoCode;
                 ViewModel.Settings = Settings;
                 _ = ViewModel.Start();
-                config.Add("url", Settings.Url);
+                config.Add("address", Settings.Address);
+                config.Add("geocode", Settings.GeoCode);
                 config.Save();
             }
         }
