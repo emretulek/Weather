@@ -15,7 +15,7 @@ This project was developed as a weather widget for windows widgets.
   "color_light": "#FFFFFFFF",
   "color_dark": "#FF808080",
   "address": "İstanbul, Türkiye",
-  "geocode": "39.647,27.882"
+  "geocode": "41.009,28.966"
 }
 ```
 
