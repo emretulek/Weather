@@ -249,7 +249,7 @@ namespace Weather
                 var dayDegree1_1 = string.IsNullOrEmpty(temperature?[0]?.ToString()) ? current_temperatureMax : temperature?[0];
                 var dayDegree1_2 = string.IsNullOrEmpty(temperature?[1]?.ToString()) ? current_temperatureMin : temperature?[1];
                 var dayImage1 = string.IsNullOrEmpty(iconCode?[0]?.ToString()) ? current_iconCode : iconCode?[0];
-                var dayprecipChance1 = string.IsNullOrEmpty(precipChance?[0]?.ToString()) ? current_precip : precipChance?[0];
+                var dayprecipChance1 = string.IsNullOrEmpty(precipChance?[0]?.ToString()) ? precipChance?[1] : precipChance?[0];
 
                 DataItems = new()
                 {
