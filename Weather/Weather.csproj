@@ -13,13 +13,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Widgets.Common">
-      <HintPath>..\..\Widgets.Common\Widgets.Common\bin\Debug\net8.0-windows\Widgets.Common.dll</HintPath>
-    </Reference>
+    <ImagesToCopy Include="$(ProjectDir)icons\**\*" />
   </ItemGroup>
 
   <ItemGroup>
-    <ImagesToCopy Include="$(ProjectDir)icons\**\*" />
+    <Reference Include="Widgets.Common">
+      <HintPath>..\..\Widgets.Common\Widgets.Common\bin\Release\net8.0-windows\Widgets.Common.dll</HintPath>
+    </Reference>
   </ItemGroup>
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
